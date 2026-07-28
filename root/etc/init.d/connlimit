@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+
+SCRIPT=/usr/sbin/connlimit-nft.sh
+
+start() {
+	$SCRIPT
+}
+
+stop() {
+	nft delete table inet connlimit 2>/dev/null
+}
+
+restart() {
+	start
+}
+
+reload() {
+	start
+}
