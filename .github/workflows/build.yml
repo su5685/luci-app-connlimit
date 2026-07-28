@@ -7,9 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    env:
-      # 关键：强制关闭libdeflate，使用原生gzip，规避host工具缺失问题
-      CONFIG_LIBDEFLATE=n
     steps:
       - name: Clean disk space
         run: |
@@ -42,7 +39,7 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Generate minimal config (disable libdeflate)
+      - name: Generate minimal config
         working-directory: ./openwrt
         run: |
           cat > .config <<'EOF'
