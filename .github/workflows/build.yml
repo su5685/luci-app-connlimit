@@ -27,17 +27,15 @@ jobs:
           chmod 755 pkg/etc/init.d/connlimit
           chmod 755 pkg/usr/sbin/connlimit-nft.sh
           mkdir -p pkg/CONTROL
-          cat > pkg/CONTROL/control <<'EOF'
-Package: luci-app-connlimit
-Version: 2.0-1
-Architecture: aarch64_cortex-a53
-Maintainer: su5685
-Section: luci
-Category: LuCI
-Depends: luci-base, nftables
-Title: Connlimit nftables 新建连接限制
-Description: LuCI UI for nftables ct count limit
-EOF
+          echo "Package: luci-app-connlimit" > pkg/CONTROL/control
+          echo "Version: 2.0-1" >> pkg/CONTROL/control
+          echo "Architecture: aarch64_cortex-a53" >> pkg/CONTROL/control
+          echo "Maintainer: su5685" >> pkg/CONTROL/control
+          echo "Section: luci" >> pkg/CONTROL/control
+          echo "Category: LuCI" >> pkg/CONTROL/control
+          echo "Depends: luci-base, nftables" >> pkg/CONTROL/control
+          echo "Title: Connlimit nftables 新建连接限制" >> pkg/CONTROL/control
+          echo "Description: LuCI UI for nftables ct count limit" >> pkg/CONTROL/control
 
       - name: Build apk package
         run: |
