@@ -54,6 +54,8 @@ jobs:
           CONFIG_PACKAGE_luci-lib-nixio=y
           CONFIG_PACKAGE_busybox=y
           CONFIG_PACKAGE_luci-app-connlimit=y
+          CONFIG_BUILD_ALL_HOST_TOOLS=y
+          CONFIG_PACKAGE_libdeflate-host=y
           EOF
           make defconfig
 
