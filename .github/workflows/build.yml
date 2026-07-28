@@ -14,7 +14,8 @@ jobs:
 
       - name: Checkout plugin source
         uses: actions/checkout@v4
-        path: plugin-src
+        with:
+          path: plugin-src
 
       - name: Clone OpenWrt 25.12
         run: |
