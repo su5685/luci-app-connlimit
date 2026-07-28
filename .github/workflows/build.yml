@@ -41,19 +41,19 @@ jobs:
       - name: Generate minimal config
         working-directory: ./openwrt
         run: |
-          cat > .config << EOF
-CONFIG_TARGET_mediatek=y
-CONFIG_TARGET_mediatek_filogic=y
-CONFIG_TARGET_mediatek_filogic_DEVICE_netcore_n60=y
-CONFIG_USE_APK=y
-CONFIG_IMAGEOPT=n
-CONFIG_TARGET_ROOTFS_SQUASHFS=n
-CONFIG_TARGET_ROOTFS_INITRAMFS=n
-CONFIG_PACKAGE_luci-base=y
-CONFIG_PACKAGE_luci-lib-nixio=y
-CONFIG_PACKAGE_busybox=y
-CONFIG_PACKAGE_luci-app-connlimit=y
-EOF
+          cat > .config <<'EOF'
+          CONFIG_TARGET_mediatek=y
+          CONFIG_TARGET_mediatek_filogic=y
+          CONFIG_TARGET_mediatek_filogic_DEVICE_netcore_n60=y
+          CONFIG_USE_APK=y
+          CONFIG_IMAGEOPT=n
+          CONFIG_TARGET_ROOTFS_SQUASHFS=n
+          CONFIG_TARGET_ROOTFS_INITRAMFS=n
+          CONFIG_PACKAGE_luci-base=y
+          CONFIG_PACKAGE_luci-lib-nixio=y
+          CONFIG_PACKAGE_busybox=y
+          CONFIG_PACKAGE_luci-app-connlimit=y
+          EOF
           make defconfig
 
       - name: Only compile plugin
