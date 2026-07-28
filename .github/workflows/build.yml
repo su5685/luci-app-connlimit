@@ -18,20 +18,16 @@ jobs:
 
       - name: Prepare package root
         run: |
-          # 创建打包根目录
           mkdir -p pkg/usr/lib/lua
           mkdir -p pkg/etc
           mkdir -p pkg/usr/sbin
-          # 复制插件文件
           cp -r luasrc/* pkg/usr/lib/lua/
           cp -r root/etc/* pkg/etc/
           cp -r root/usr/sbin/* pkg/usr/sbin/
-          # 确保脚本权限
           chmod 755 pkg/etc/init.d/connlimit
           chmod 755 pkg/usr/sbin/connlimit-nft.sh
-          # 创建控制文件
           mkdir -p pkg/CONTROL
-          cat > pkg/CONTROL/control << EOF
+          cat > pkg/CONTROL/control <<'EOF'
 Package: luci-app-connlimit
 Version: 2.0-1
 Architecture: aarch64_cortex-a53
