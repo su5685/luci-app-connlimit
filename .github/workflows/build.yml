@@ -1,0 +1,40 @@
+name: Build luci-app-connlimit
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt update && sudo apt install -y opkg-utils tar gzip
+
+      - name: Package
+        run: |
+          mkdir -p pkg/usr/lib/lua pkg/etc pkg/usr/sbin pkg/CONTROL
+          cp -r luasrc/* pkg/usr/lib/lua/
+          cp -r root/etc/* pkg/etc/
+          cp -r root/usr/sbin/* pkg/usr/sbin/
+          chmod 755 pkg/etc/init.d/connlimit
+          chmod 755 pkg/usr/sbin/connlimit-nft.sh
+          echo 'Package: luci-app-connlimit' > pkg/CONTROL/control
+          echo 'Version: 2.0-1' >> pkg/CONTROL/control
+          echo 'Architecture: aarch64_cortex-a53' >> pkg/CONTROL/control
+          echo 'Maintainer: su5685' >> pkg/CONTROL/control
+          echo 'Section: luci' >> pkg/CONTROL/control
+          echo 'Category: LuCI' >> pkg/CONTROL/control
+          echo 'Depends: luci-base, nftables' >> pkg/CONTROL/control
+          echo 'Title: Connlimit nftables 连接限制' >> pkg/CONTROL/control
+          echo 'Description: LuCI UI for nftables ct limit' >> pkg/CONTROL/control
+          opkg-build pkg ./
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: luci-app-connlimit-apk
+          path: *.apk
