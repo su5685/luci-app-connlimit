@@ -1,4 +1,4 @@
-name: Build luci-app-connlimit APK | Netcore N60 OpenWrt 25.12.5
+name: Build luci-app-connlimit APK Direct Package
 on:
   workflow_dispatch:
   push:
@@ -8,63 +8,49 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Clean disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache
-
       - name: Checkout plugin source
         uses: actions/checkout@v4
-        with:
-          path: plugin-src
 
-      - name: Clone OpenWrt 25.12 release branch
-        run: |
-          git clone --depth=1 --branch openwrt-25.12 https://github.com/openwrt/openwrt.git openwrt
-
-      - name: Install build dependencies
+      - name: Install opkg build tools
         run: |
           sudo apt update
-          sudo apt install -y build-essential gcc g++ flex bison git curl wget unzip libssl-dev python3 python3-pip rsync file gzip
+          sudo apt install -y opkg-utils tar gzip
 
-      - name: Copy plugin to openwrt/package
+      - name: Prepare package root
         run: |
-          rm -rf openwrt/package/luci-app-connlimit
-          cp -r plugin-src/ openwrt/package/luci-app-connlimit/
-          chmod +x openwrt/package/luci-app-connlimit/root/etc/init.d/connlimit
-          chmod +x openwrt/package/luci-app-connlimit/root/usr/sbin/connlimit-nft.sh
+          # 创建打包根目录
+          mkdir -p pkg/usr/lib/lua
+          mkdir -p pkg/etc
+          mkdir -p pkg/usr/sbin
+          # 复制插件文件
+          cp -r luasrc/* pkg/usr/lib/lua/
+          cp -r root/etc/* pkg/etc/
+          cp -r root/usr/sbin/* pkg/usr/sbin/
+          # 确保脚本权限
+          chmod 755 pkg/etc/init.d/connlimit
+          chmod 755 pkg/usr/sbin/connlimit-nft.sh
+          # 创建控制文件
+          mkdir -p pkg/CONTROL
+          cat > pkg/CONTROL/control << EOF
+Package: luci-app-connlimit
+Version: 2.0-1
+Architecture: aarch64_cortex-a53
+Maintainer: su5685
+Section: luci
+Category: LuCI
+Depends: luci-base, nftables
+Title: Connlimit nftables 新建连接限制
+Description: LuCI UI for nftables ct count limit
+EOF
 
-      - name: Update & Install feeds
-        working-directory: ./openwrt
+      - name: Build apk package
         run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          opkg-build pkg ./
+          ls -l *.apk
 
-      - name: Generate minimal config
-        working-directory: ./openwrt
-        run: |
-          cat > .config <<'EOF'
-          CONFIG_TARGET_mediatek=y
-          CONFIG_TARGET_mediatek_filogic=y
-          CONFIG_TARGET_mediatek_filogic_DEVICE_netcore_n60=y
-          CONFIG_USE_APK=y
-          CONFIG_IMAGEOPT=n
-          CONFIG_TARGET_ROOTFS_SQUASHFS=n
-          CONFIG_TARGET_ROOTFS_INITRAMFS=n
-          CONFIG_PACKAGE_luci-base=y
-          CONFIG_PACKAGE_luci-lib-nixio=y
-          CONFIG_PACKAGE_busybox=y
-          CONFIG_PACKAGE_luci-app-connlimit=y
-          EOF
-          make defconfig
-
-      - name: Only compile plugin (skip host dependency check)
-        working-directory: ./openwrt
-        run: |
-          make package/luci-app-connlimit/compile V=sc DYNLINK=1 NO_HOST_BUILD=1 IGNORE_ERRORS=1
-
-      - name: Upload compiled APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: luci-app-connlimit-N60-apk
-          path: openwrt/bin/packages/aarch64_cortex-a53/base/*.apk
+          path: *.apk
           retention-days: 30
