@@ -1,0 +1,5 @@
+config rule
+	option enable '0'
+	option subnet '192.168.10.0/24'
+	option exclude_dst '192.168.10.1'
+	option max_new_conn '500'
