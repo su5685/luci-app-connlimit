@@ -1,0 +1,69 @@
+name: Build luci-app-connlimit APK | Netcore N60 OpenWrt 25.12.5
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Clean disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache
+
+      - name: Checkout plugin source
+        uses: actions/checkout@v4
+        path: plugin-src
+
+      - name: Clone OpenWrt 25.12
+        run: |
+          git clone --depth=1 --branch openwrt-25.12 https://github.com/openwrt/openwrt.git openwrt
+
+      - name: Install build dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential gcc g++ flex bison git curl wget unzip libssl-dev python3 python3-pip rsync file
+
+      - name: Copy plugin to openwrt/package
+        run: |
+          rm -rf openwrt/package/luci-app-connlimit
+          cp -r plugin-src/ openwrt/package/luci-app-connlimit/
+          chmod +x openwrt/package/luci-app-connlimit/root/etc/init.d/connlimit
+          chmod +x openwrt/package/luci-app-connlimit/root/usr/sbin/connlimit-nft.sh
+
+      - name: Update & Install feeds
+        working-directory: ./openwrt
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Generate minimal config
+        working-directory: ./openwrt
+        run: |
+          cat > .config << EOF
+CONFIG_TARGET_mediatek=y
+CONFIG_TARGET_mediatek_filogic=y
+CONFIG_TARGET_mediatek_filogic_DEVICE_netcore_n60=y
+CONFIG_USE_APK=y
+CONFIG_IMAGEOPT=n
+CONFIG_TARGET_ROOTFS_SQUASHFS=n
+CONFIG_TARGET_ROOTFS_INITRAMFS=n
+CONFIG_PACKAGE_luci-base=y
+CONFIG_PACKAGE_luci-lib-nixio=y
+CONFIG_PACKAGE_busybox=y
+CONFIG_PACKAGE_luci-app-connlimit=y
+EOF
+          make defconfig
+
+      - name: Only compile plugin
+        working-directory: ./openwrt
+        run: |
+          make package/luci-app-connlimit/compile V=sc
+
+      - name: Upload compiled APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: luci-app-connlimit-N60-apk
+          path: openwrt/bin/packages/aarch64_cortex-a53/base/*.apk
+          retention-days: 30
