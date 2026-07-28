@@ -7,28 +7,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    container:
+      image: openwrt/sdk:25.12-mediatek-filogic
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install compile dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git make gcc libarchive-dev pkg-config tar gzip
-
-      - name: Build opkg from source
-        run: |
-          git clone https://github.com/openwrt/opkg.git
-          cd opkg
-          ./autogen.sh
-          ./configure
-          make -j$(nproc)
-          sudo make install
-          cd ..
-          # 刷新动态链接库
-          sudo ldconfig
-
-      - name: Package
+      - name: Prepare package structure
         run: |
           mkdir -p pkg/usr/lib/lua pkg/etc pkg/usr/sbin pkg/CONTROL
           cp -r luasrc/* pkg/usr/lib/lua/
@@ -36,19 +21,23 @@ jobs:
           cp -r root/usr/sbin/* pkg/usr/sbin/
           chmod 755 pkg/etc/init.d/connlimit
           chmod 755 pkg/usr/sbin/connlimit-nft.sh
-          echo 'Package: luci-app-connlimit' > pkg/CONTROL/control
-          echo 'Version: 2.0-1' >> pkg/CONTROL/control
-          echo 'Architecture: aarch64_cortex-a53' >> pkg/CONTROL/control
-          echo 'Maintainer: su5685' >> pkg/CONTROL/control
-          echo 'Section: luci' >> pkg/CONTROL/control
-          echo 'Category: LuCI' >> pkg/CONTROL/control
-          echo 'Depends: luci-base, nftables' >> pkg/CONTROL/control
-          echo 'Title: Connlimit nftables 连接限制' >> pkg/CONTROL/control
-          echo 'Description: LuCI UI for nftables ct limit' >> pkg/CONTROL/control
-          opkg-build pkg ./
+          cat > pkg/CONTROL/control <<'EOF'
+Package: luci-app-connlimit
+Version: 2.0-1
+Architecture: aarch64_cortex-a53
+Maintainer: su5685
+Section: luci
+Category: LuCI
+Depends: luci-base, nftables
+Title: Connlimit nftables 连接限制
+Description: LuCI UI for nftables ct limit
+EOF
 
-      - name: Upload
+      - name: Build package
+        run: opkg-build pkg ./
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: luci-app-connlimit-apk
-          path: "*.apk"
+          path: *.apk
